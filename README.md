@@ -1,2 +1,1 @@
-# nets
-A sandbox for neural net projects
+Storing some of my neural network hobby projects in this repo
