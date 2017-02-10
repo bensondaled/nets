@@ -11,10 +11,12 @@ class Chords():
     To get a batch for training, use chords.batch()
 
     """
-    def __init__(self, fs=4000, dur=0.5, base=440, sigma=1., phase_noise=1.):
+    def __init__(self, n=2000, fs=4000, dur=0.5, base=440, sigma=1., phase_noise=1.):
         """
         Parameters
         ----------
+        n : int
+            number of examples per set (train/test/validate)
         fs : int
             sampling rate in Hz
         dur : int
@@ -37,9 +39,14 @@ class Chords():
 
         self.abs_base = base
         self.roots = np.arange(-11,1) # 1 octaves for now
-        self.qualities = [self.major,self.minor,self.dimin,self.aug]#,self.maj7,self.dom7]
+        self.qualities = [self.major,self.minor,self.dimin,self.aug,self.maj7,self.dom7]
         self.magnitudes = np.arange(1,5)
         self.n_classes = len(self.qualities)
+
+        self.train_data,self.train_labs = self.make_batch(n)
+        self.val_data,self.val_labs = self.make_batch(n)
+        self.test_data,self.test_labs = self.make_batch(n)
+        self.i = 0
 
     def rand(self):
         # return a random chord
@@ -98,7 +105,7 @@ class Chords():
         x += np.random.normal(0,self.sigma,size=x.shape)
         return x
 
-    def batch(self, n):
+    def make_batch(self, n):
         qual_idxs = np.random.choice(np.arange(len(self.qualities)), size=n)
         qual_arr = np.zeros([len(qual_idxs),len(self.qualities)])
         for i,qi in enumerate(qual_idxs):
@@ -107,6 +114,17 @@ class Chords():
         roots = np.random.choice(self.roots, size=n)
         chords = np.array([q(r) for q,r in zip(quals,roots)])
         return chords, qual_arr
+
+    def batch(self, n):
+        x = np.take(self.train_data, np.arange(self.i,self.i+n), axis=0, mode='wrap')
+        y = np.take(self.train_labs, np.arange(self.i,self.i+n), axis=0, mode='wrap')
+        
+        # increment counter
+        self.i += n
+        if self.i >= len(self.train_data):
+            self.i -= len(self.train_data)
+
+        return x,y
 
 ##
 if __name__ == '__main__':
