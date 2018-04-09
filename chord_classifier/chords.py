@@ -39,7 +39,7 @@ class Chords():
 
         self.abs_base = base
         self.roots = np.arange(-11,1) # 1 octaves for now
-        self.qualities = [self.major,self.minor,self.dimin,self.aug,self.maj7,self.dom7]
+        self.qualities = [self.major,self.minor,self.dimin]#,self.aug,self.maj7,self.dom7,self.min7]
         self.magnitudes = np.arange(1,5)
         self.n_classes = len(self.qualities)
 
@@ -94,6 +94,9 @@ class Chords():
     
     def maj7(self, root=0):
         return self.xad(root,0,4,7,11)
+    
+    def min7(self, root=0):
+        return self.xad(root,0,3,7,10)
 
     def xad(self,root,*notes):
         # like triad, but for x notes
