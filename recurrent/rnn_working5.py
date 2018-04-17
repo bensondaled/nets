@@ -38,10 +38,9 @@ init_state = tf.nn.rnn_cell.LSTMStateTuple(cell_state, hidden_state)
 x_series = tf.unstack(batch_x, axis=2)
 
 cell = rnn.BasicLSTMCell(timesteps, state_is_tuple=True, reuse=tf.AUTO_REUSE)
-states_series, current_state = rnn.static_rnn(cell, x_series, init_state)
+states_series, final_state = rnn.static_rnn(cell, x_series, init_state)
 
-logits_series = [tf.matmul(state, W2) + b2 for state in states_series]
-logit = logits_series[-1]
+logit = tf.matmul(final_state.h, W2) + b2
 pred = tf.nn.softmax(logit)
 loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logit, labels=batch_y)
 loss = tf.reduce_mean(loss)
@@ -57,26 +56,29 @@ init = tf.global_variables_initializer()
 with tf.Session() as sess:
     sess.run(init)
     
-    for i in range(5000):
+    for i in range(1000):
         bx,by = get_batch(batch_size)
         _current_cell_state = np.zeros((batch_size, timesteps))
         _current_hidden_state = np.zeros((batch_size, timesteps))
 
-        _total_loss, _train_step, _current_state, = sess.run(
-            [loss, train_step, current_state],
+        _total_loss, _train_step, = sess.run(
+            [loss, train_step],
             feed_dict={
                 batch_x:bx,
                 batch_y:by,
                 cell_state:_current_cell_state,
                 hidden_state:_current_hidden_state,
             })
-        _current_cell_state, _current_hidden_state = _current_state
 
         print(_total_loss)
 
     testx,testy = get_batch(batch_size)
+    _current_cell_state = np.zeros((batch_size, timesteps))
+    _current_hidden_state = np.zeros((batch_size, timesteps))
     acc = sess.run(accuracy, feed_dict={batch_x:testx, batch_y:testy, cell_state:_current_cell_state, hidden_state:_current_hidden_state})
     print()
     print(acc)
     
+##
+
 ##
