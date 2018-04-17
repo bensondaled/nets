@@ -1,11 +1,12 @@
 """
-do not modify- proof of concept for a pseudo-manual RNN
+do not edit - working example of basic tf RNN implementation
 """
 
 ## Imports
 
 import numpy as np
 import tensorflow as tf
+from tensorflow.contrib import rnn
 
 ## Parameters
 timesteps = 5
@@ -18,34 +19,24 @@ data = np.tile(np.arange(10), 1000)
 def get_batch(size):
     i = np.random.randint(0, len(data)-size, size=size)
     bx = np.array([data[ii:ii+timesteps] for ii in i])
+    bx = bx[:,None,:] # batch samples x input dimensionality x timesteps
     by = np.array([data[ii+timesteps] for ii in i])
     return bx,by
 
 ## Variable inits
 
-batch_x = tf.placeholder(tf.float32, [batch_size, timesteps])
+batch_x = tf.placeholder(tf.float32, [batch_size, 1, timesteps])
 batch_y = tf.placeholder(tf.int64, [batch_size])
-#batch_y_oh = tf.one_hot(batch_y, n_classes, dtype=tf.int32)
-
-init_state = tf.placeholder(tf.float32, [batch_size, timesteps])
-
-W = tf.Variable(np.random.rand(timesteps+1, timesteps), dtype=tf.float32)
-b = tf.Variable(np.zeros((1,timesteps)), dtype=tf.float32)
 
 W2 = tf.Variable(np.random.rand(timesteps, n_classes),dtype=tf.float32)
 b2 = tf.Variable(np.zeros((1, n_classes)), dtype=tf.float32)
 
-x_series = tf.unstack(batch_x, axis=1)
+init_state = tf.placeholder(tf.float32, [batch_size, timesteps])
 
-current_state = init_state
-states_series = []
-for xi in x_series:
-    xi = tf.reshape(xi, [batch_size, 1])
-    xi_concat = tf.concat([xi, current_state], 1)
+x_series = tf.unstack(batch_x, axis=2)
 
-    next_state = tf.tanh(tf.matmul(xi_concat, W) + b)
-    states_series.append(next_state)
-    current_state = next_state
+cell = rnn.BasicRNNCell(timesteps, reuse=tf.AUTO_REUSE)
+states_series, current_state = rnn.static_rnn(cell, x_series, init_state)
 
 logits_series = [tf.matmul(state, W2) + b2 for state in states_series]
 logit = logits_series[-1]
